@@ -24,8 +24,8 @@
             <div class="sidebar-wrapper active">
                 <div class="sidebar-header">
                     <div class="d-flex justify-content-between">
-                        <div class="logo flex justify-center items-center"">
-                            <img src="{{ asset('assets/images/logo/logo_aplikasi.png') }}" alt="Logo" style="width: 100px; height: auto;" />
+                        <div class="d-flex justify-content-center w-100">
+                            <img src="{{ asset('assets/images/logo/logo_aplikasi.png') }}" alt="Logo" style="width: 125px; height: auto; " />
                         </div>
                         
                         <div class="toggler">

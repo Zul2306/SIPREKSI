@@ -1,81 +1,130 @@
 import pandas as pd
-import math
+import numpy as np
+from math import log2
+import os
 
-# Hitung entropy dari target
+target_column = 'TARGET'
+model_cache = {}  # Menyimpan tree dan atribut input per file CSV
 
-def calculate_entropy(target_series):
-    values = target_series.value_counts(normalize=True)
-    return -sum(p * math.log2(p) for p in values if p > 0)
+def calculate_entropy(subset):
+    if len(subset) == 0:
+        return 0
+    counts = subset[target_column].value_counts()
+    probabilities = counts / len(subset)
+    entropy = -sum(p * log2(p) for p in probabilities)
+    return entropy
 
-# Cari split terbaik berdasarkan gain tertinggi dari mean/median
+def count_classes(subset):
+    return subset[target_column].value_counts().to_dict()
 
-def find_best_split(data, target):
-    total_data = len(data)
-    entropy_total = calculate_entropy(data[target])
-    all_columns = data.columns.drop(target)
-    numeric_columns = data[all_columns].select_dtypes(include=['number']).columns
-    best = None
+def get_majority_class(counts):
+    return max(counts.items(), key=lambda x: x[1])[0]
 
-    for column in numeric_columns:
-        for method in ['mean', 'median']:
-            threshold = data[column].mean() if method == 'mean' else data[column].median()
-            gt_split = data[data[column] > threshold]
-            le_split = data[data[column] <= threshold]
+def build_tree_structure(data):
+    entropy = calculate_entropy(data)
+    counts = count_classes(data)
 
-            if len(gt_split) == 0 or len(le_split) == 0:
-                continue
+    if entropy == 0 or len(data) < 2:
+        return {
+            "type": "leaf",
+            "prediction": get_majority_class(counts),
+            "class_counts": counts
+        }
 
-            entropy_gt = calculate_entropy(gt_split[target])
-            entropy_le = calculate_entropy(le_split[target])
-            gain = entropy_total - (len(gt_split) / total_data) * entropy_gt - (len(le_split) / total_data) * entropy_le
+    gains = {}
+    thresholds = {}
+    for column in data.columns:
+        if column == target_column or not np.issubdtype(data[column].dtype, np.number):
+            continue
+        threshold = data[column].mean()
+        le_subset = data[data[column] <= threshold]
+        gt_subset = data[data[column] > threshold]
 
-            if best is None or gain > best['gain']:
-                best = {
-                    'column': column,
-                    'method': method,
-                    'threshold': threshold,
-                    'gain': gain,
-                    'gt_split': gt_split,
-                    'le_split': le_split
-                }
-    return best
+        le_entropy = calculate_entropy(le_subset)
+        gt_entropy = calculate_entropy(gt_subset)
 
-# Bangun decision tree secara rekursif
+        le_weight = len(le_subset) / len(data)
+        gt_weight = len(gt_subset) / len(data)
 
-def build_tree(data, target, depth=0, max_depth=12):
-    counts = data[target].value_counts().to_dict()
-    samples = len(data)
-    is_pure_leaf = len(counts) == 1
-    is_single_sample = samples == 1
+        weighted_entropy = le_weight * le_entropy + gt_weight * gt_entropy
+        gain = entropy - weighted_entropy
 
-    if samples == 0 or is_pure_leaf or is_single_sample or depth >= max_depth:
-        if samples == 0:
-            return {'type': 'leaf', 'class': 'Unknown'}
-        chosen = max(counts, key=counts.get)
-        return {'type': 'leaf', 'class': chosen}
+        gains[column] = gain
+        thresholds[column] = threshold
 
-    split = find_best_split(data, target)
-    if split is None or split['gain'] <= 0:
-        chosen = max(counts, key=counts.get)
-        return {'type': 'leaf', 'class': chosen}
+    if not gains:
+        return {
+            "type": "leaf",
+            "prediction": get_majority_class(counts),
+            "class_counts": counts
+        }
+
+    best_attribute = max(gains, key=gains.get)
+    threshold = thresholds[best_attribute]
+
+    le_data = data[data[best_attribute] <= threshold]
+    gt_data = data[data[best_attribute] > threshold]
 
     return {
-        'type': 'node',
-        'column': split['column'],
-        'method': split['method'],
-        'threshold': split['threshold'],
-        'left': build_tree(split['le_split'], target, depth + 1, max_depth),
-        'right': build_tree(split['gt_split'], target, depth + 1, max_depth)
+        "type": "node",
+        "attribute": best_attribute,
+        "threshold": threshold,
+        "class_counts": counts,
+        "left": build_tree_structure(le_data),
+        "right": build_tree_structure(gt_data)
     }
 
-# Prediksi menggunakan pohon keputusan
-
-def predict_tree(tree, input_data):
-    if tree['type'] == 'leaf':
-        return tree['class']
-
-    value = input_data[tree['column']]
-    if value <= tree['threshold']:
-        return predict_tree(tree['left'], input_data)
+def predict(tree, input_data):
+    if tree["type"] == "leaf":
+        return tree["prediction"]
+    attr = tree["attribute"]
+    threshold = tree["threshold"]
+    if input_data[attr] <= threshold:
+        return predict(tree["left"], input_data)
     else:
-        return predict_tree(tree['right'], input_data)
+        return predict(tree["right"], input_data)
+
+def tree_input_attributes(tree, attributes=None):
+    if attributes is None:
+        attributes = set()
+    if tree["type"] == "node":
+        attributes.add(tree["attribute"])
+        tree_input_attributes(tree["left"], attributes)
+        tree_input_attributes(tree["right"], attributes)
+    return sorted(attributes)
+
+def load_model_from_csv(csv_filename):
+    if csv_filename in model_cache:
+        return model_cache[csv_filename]
+
+    full_path = os.path.join("data", csv_filename)
+    if not os.path.exists(full_path):
+        raise FileNotFoundError(f"CSV file '{csv_filename}' tidak ditemukan.")
+
+    df = pd.read_csv(full_path)
+    tree = build_tree_structure(df)
+    input_fields = tree_input_attributes(tree)
+    model_cache[csv_filename] = {
+        "tree": tree,
+        "input_fields": input_fields
+    }
+    return model_cache[csv_filename]
+
+def get_required_fields(csv_filename):
+    model = load_model_from_csv(csv_filename)
+    return model["input_fields"]
+
+def predict_from_input_dict(csv_filename, input_dict):
+    model = load_model_from_csv(csv_filename)
+    return predict(model["tree"], input_dict)
+
+def get_available_csv_files():
+    return [f for f in os.listdir("data") if f.endswith(".csv")]
+
+def get_feature_columns_from_csv(csv_filename):
+    full_path = os.path.join("data", csv_filename)
+    df = pd.read_csv(full_path)
+    return [
+        col for col in df.columns
+        if col != target_column and np.issubdtype(df[col].dtype, np.number)
+    ]
