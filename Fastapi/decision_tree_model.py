@@ -20,7 +20,14 @@ def count_classes(subset):
 def get_majority_class(counts):
     return max(counts.items(), key=lambda x: x[1])[0]
 
-def build_tree_structure(data):
+def is_one_per_class(subset):
+    counts = subset[target_column].value_counts()
+    return len(subset) == 2 and set(counts.values) == {1} and len(counts) == 2
+
+
+def build_tree_structure(data, used_attributes=None):
+    if used_attributes is None:
+        used_attributes = set()
     entropy = calculate_entropy(data)
     counts = count_classes(data)
 
@@ -34,7 +41,9 @@ def build_tree_structure(data):
     gains = {}
     thresholds = {}
     for column in data.columns:
-        if column == target_column or not np.issubdtype(data[column].dtype, np.number):
+        if (column == target_column or
+            column in used_attributes or
+            not np.issubdtype(data[column].dtype, np.number)):
             continue
         threshold = data[column].mean()
         le_subset = data[data[column] <= threshold]
@@ -51,6 +60,7 @@ def build_tree_structure(data):
 
         gains[column] = gain
         thresholds[column] = threshold
+       
 
     if not gains:
         return {
@@ -61,17 +71,26 @@ def build_tree_structure(data):
 
     best_attribute = max(gains, key=gains.get)
     threshold = thresholds[best_attribute]
+    new_used_attributes = used_attributes | {best_attribute}
 
     le_data = data[data[best_attribute] <= threshold]
     gt_data = data[data[best_attribute] > threshold]
+
+    #pengecekan jika node diteruskan akan menghasilkan leaf node kelas 1=1 dan 0=1
+    if is_one_per_class(le_data) or is_one_per_class(gt_data):
+        return {
+            "type": "leaf",
+            "prediction": get_majority_class(counts),
+            "class_counts": counts
+        }
 
     return {
         "type": "node",
         "attribute": best_attribute,
         "threshold": threshold,
         "class_counts": counts,
-        "left": build_tree_structure(le_data),
-        "right": build_tree_structure(gt_data)
+        "left": build_tree_structure(le_data, new_used_attributes),
+        "right": build_tree_structure(gt_data, new_used_attributes)
     }
 
 def predict(tree, input_data):
