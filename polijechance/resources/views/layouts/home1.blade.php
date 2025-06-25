@@ -34,77 +34,57 @@
                     </div>
                 </div>
                <div class="sidebar-menu">
-  <ul class="menu">
-
-    {{-- Menu untuk semua user --}}
-    @if(Auth::guard('web')->check())
-     <li class="sidebar-item {{ Request::is('index') ? 'active' : '' }}">
-        <form method="GET" action="{{ route('user.dashboard') }}" id="dashboard_form">
-            @csrf
-            <a href="#" class="sidebar-link" onclick="event.preventDefault(); document.getElementById('dashboard_form').submit();">
+<!-- Sidebar -->
+<ul class="menu">
+    @if(Auth::guard('admin')->check())
+        {{-- Dashboard --}}
+        <li class="sidebar-item {{ Request::routeIs('admin.dashboard') ? 'active' : '' }}">
+            <a href="{{ route('admin.dashboard') }}" class="sidebar-link">
                 <i class="bi bi-bar-chart"></i>
                 <span>Dashboard</span>
             </a>
-        </form>
-    </li>
-    <li class="sidebar-item {{ Request::is('index') ? 'active' : '' }}">
-        <form method="GET" action="{{ route('predict.form') }}" id="predict_form">
-            @csrf
-            <a href="#" class="sidebar-link" onclick="event.preventDefault(); document.getElementById('predict_form').submit();">
-                <i class="bi bi-upload"></i>
-                <span>Prediksi</span>
-            </a>
-        </form>
-    </li>
+        </li>
 
-    <li class="sidebar-item">
-        <a href="{{ route('user.prediction.history') }}" class="sidebar-link">
-            <i class="bi bi-folder"></i>
-            <span>Riwayat Prediksi</span>
+        {{-- Data Admin --}}
+       @if(in_array($admin->id, [2])) {{-- ganti dengan ID yang diizinkan --}}
+    <li class="sidebar-item {{ Request::is('admin/data') ? 'active' : '' }}">
+        <a href="{{ route('admin.index') }}" class="sidebar-link">
+            <i class="bi bi-person-badge"></i>
+            <span>Data Admin</span>
         </a>
     </li>
-        @endif
+    @endif
 
-    {{-- Menu khusus Admin --}}
-    @if(Auth::guard('admin')->check())
-    <li class="sidebar-item {{ Request::is('index') ? 'active' : '' }}">
-        <form method="GET" action="{{ route('admin.dashboard') }}" id="dashboard_form">
-            @csrf
-            <a href="#" class="sidebar-link" onclick="event.preventDefault(); document.getElementById('dashboard_form').submit();">
-                <i class="bi bi-bar-chart"></i>
-                <span>Dashboard</span>
-            </a>
-        </form>
-    </li>
-       
-        <li class="sidebar-item has-sub">
-            <a href="#" class='sidebar-link'>
+        {{-- Siswa --}}
+        <li class="sidebar-item has-sub {{ Request::is('users/kelas*') ? 'active' : '' }}">
+            <a href="#" class="sidebar-link">
                 <i class="bi bi-stack"></i>
                 <span>Siswa</span>
             </a>
-            <ul class="submenu">
-                <li class="submenu-item">
-                    <a href="{{ url('/users/kelas/1') }}">XII (1)</a>
+            <ul class="submenu {{ Request::is('users/kelas*') ? 'd-block' : '' }}">
+                <li class="submenu-item {{ Request::is('users/kelas/1') ? 'active' : '' }}">
+                    <a href="{{ url('/users/kelas/1') }}">XI (1)</a>
                 </li>
-                <li class="submenu-item">
-                    <a href="{{ url('/users/kelas/2') }}">XII (2)</a>
+                <li class="submenu-item {{ Request::is('users/kelas/2') ? 'active' : '' }}">
+                    <a href="{{ url('/users/kelas/2') }}">XI (2)</a>
                 </li>
-                <!-- Tambahkan sesuai kebutuhan -->
+                <!-- Tambah kelas lainnya di sini -->
             </ul>
         </li>
-    @endif
 
-    {{-- Logout --}}
-    <li class="sidebar-item">
-        <form method="POST" action="{{ route('logout') }}" id="logout-form">
-            @csrf
-            <a href="#" class="sidebar-link" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                <i class="bi bi-box-arrow-right"></i>
-                <span>Logout</span>
-            </a>
-        </form>
-    </li>
+        {{-- Logout --}}
+        <li class="sidebar-item">
+            <form action="{{ route('logout') }}" method="POST">
+                @csrf
+                <button type="submit" class="sidebar-link btn btn-link text-start p-0 ps-3">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span>Logout</span>
+                </button>
+            </form>
+        </li>
+    @endif
 </ul>
+
 
 
     <button class="sidebar-toggler btn x">

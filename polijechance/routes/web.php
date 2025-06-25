@@ -27,7 +27,7 @@ use App\Http\Controllers\SuperAdmin\SuperController;
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('home');
 });
 
 Route::get('/dashboard', function () {
@@ -53,7 +53,7 @@ Route::middleware(['admin.only'])->group(function() {
    Route::delete('/admin/dashboard/{id}', [AdminController::class, 'destroy'])->name('admin.destroy');
    Route::get('/admin/data', [SuperController::class, 'show'])->name('admin.index');
     Route::post('/admin/store', [SuperController::class, 'store'])->name('admin.store');
-    Route::delete('/admin/{id}', [SuperController::class, 'destroy'])->name('admin.destroy');
+    Route::delete('/admin/{id}', [SuperController::class, 'destroy'])->name('admin.destroyy');
 
    
 });

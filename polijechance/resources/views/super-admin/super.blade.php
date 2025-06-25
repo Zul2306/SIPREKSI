@@ -1,4 +1,4 @@
-@extends('layouts.home1')
+@extends('layouts.home')
 
 @section('content')
 <div class="container">
@@ -28,7 +28,7 @@
                     <td>{{ $admin->email }}</td>
                     <td>{{ $admin->created_at->format('d-m-Y') }}</td>
                     <td>
-                        <form method="POST" action="{{ route('admin.destroy', $admin->id) }}" onsubmit="return confirm('Hapus admin ini?');">
+                        <form method="POST" action="{{ route('admin.destroyy', $admin->id) }}" onsubmit="return confirm('Hapus admin ini?');">
                             @csrf
                             @method('DELETE')
                             <button class="btn btn-sm btn-danger">Hapus</button>

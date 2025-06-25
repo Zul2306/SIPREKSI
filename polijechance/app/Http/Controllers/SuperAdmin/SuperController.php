@@ -29,12 +29,13 @@ class SuperController extends Controller
             'password' => Hash::make($request->password),
         ]);
     
-        return redirect()->route('admin.store')->with('success', 'Admin berhasil ditambahkan');
+        return redirect()->route('admin.index')->with('success', 'Admin berhasil ditambahkan');
+
     }
     
     public function destroy($id)
     {
         Admin::findOrFail($id)->delete();
-        return redirect()->route('admin.destroy')->with('success', 'Admin berhasil dihapus');
+        return redirect()->route('admin.index')->with('success', 'Admin berhasil dihapus');
     }
 }

@@ -12,7 +12,7 @@ def calculate_entropy(subset):
     counts = subset[target_column].value_counts()
     probabilities = counts / len(subset)
     entropy = -sum(p * log2(p) for p in probabilities)
-    return entropy
+    return entropy # menghitung entropy
 
 def count_classes(subset):
     return subset[target_column].value_counts().to_dict()

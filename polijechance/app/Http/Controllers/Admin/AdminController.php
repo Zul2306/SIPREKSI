@@ -43,19 +43,6 @@ class AdminController extends Controller
 
         return redirect('/admin/dashboard')->with('success', 'Pengguna berhasil dihapus.');
     }
-//     public function getChartData(Request $request)
-// {
-//     $userId = $request->query('user_id');
-
-//     $data = DB::table('predictions')
-//         ->selectRaw('DATE(created_at) as date, result')
-//         ->where('user_id', $userId)
-//         ->groupByRaw('DATE(created_at), result')
-//         ->orderBy('date')
-//         ->get();
-
-//     return response()->json($data);
-// }
 public function showByKelas($id)
 {
      $kelas = Kelas::with('users')->findOrFail($id);

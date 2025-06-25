@@ -92,6 +92,15 @@
                 <!-- Tambahkan sesuai kebutuhan -->
             </ul>
         </li>
+        @if(in_array(Auth::guard('admin')->user()->id, [2]))
+        {{-- ganti dengan ID yang diizinkan --}}
+        <li class="sidebar-item {{ Request::is('admin/data') ? 'active' : '' }}">
+            <a href="{{ route('admin.index') }}" class="sidebar-link">
+                <i class="bi bi-person-badge"></i>
+                <span>Data Admin</span>
+            </a>
+        </li>
+        @endif
     @endif
 
     {{-- Logout --}}
@@ -158,7 +167,13 @@
                                     <a href="#" data-bs-toggle="dropdown" aria-expanded="false">
                                         <div class="user-menu d-flex">
                                             <div class="user-name text-end me-3">
-                                                <h6 class="mb-0 text-gray-600">{{ Auth::user()->name }}</h6>
+                                                @if(Auth::guard('admin')->check())
+                                                <h6>{{ Auth::guard('admin')->user()->name }}</h6>
+                                            @elseif(Auth::guard('web')->check())
+                                                <h6>{{ Auth::guard('web')->user()->name }}</h6>
+                                            @endif
+                                            
+                                                {{-- <h6 class="mb-0 text-gray-600">{{ Auth::user()->name }}</h6> --}}
                                                 {{-- <p class="mb-0 text-sm text-gray-600">{{ Auth::user()->role }}</p> --}}
                                             </div>
                                             <div class="user-img d-flex align-items-center">
@@ -170,7 +185,7 @@
                                     </a>
                                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
                                         <li>
-                                            <h6 class="dropdown-header">Hello, {{ Auth::user()->name }}!</h6>
+                                            {{-- <h6 class="dropdown-header">Hello, {{ Auth::user()->name }}!</h6> --}}
                                         </li>
                                         <li><a class="dropdown-item" href="#"><i class="icon-mid bi bi-person me-2"></i> My
                                                 Profile</a></li>
